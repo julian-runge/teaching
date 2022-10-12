@@ -129,8 +129,8 @@ rf_x1$results
 rf_x2$results
 
 # for decision tree
-print(varImp((rf_x1)))
-plot(varImp((rf_x1)))
+#print(varImp((rf_x1)))
+#plot(varImp((rf_x1)))
 
 ### look at variable importance
 rf_x1_var_imp <- vip(rf_x1$finalModel,
@@ -244,22 +244,6 @@ data_mmm$log_youtube_performance_spend <- log(data_mmm$youtube_performance_spend
 data_mmm$log_newspaper_spend <- log(data_mmm$newspaper_spend + 1)
 data_mmm$log_tv_spend <- log(data_mmm$tv_spend + 1)
 
-### look at lagged spend-sales correlations
-lagged_corr_alltime_1_40 <- ccf(spend_ts <- ts(data_mmm$total_spend), sales_ts <- ts(data_mmm$sales), lag=40,
-                           main = "Lagged correlations between past spend and current sales (All-time)",
-                           xlim = c(-40,-1))
-
-lagged_corr_alltime_11_16 <- ccf(spend_ts <- ts(data_mmm$total_spend), sales_ts <- ts(data_mmm$sales), lag=16,
-                           main = "Lagged correlations between past spend and current sales (All-time)",
-                           xlim = c(-16,-11))
-
-log_lagged_corr_alltime_1_40 <- ccf(ts(data_mmm$log_total_spend), ts(data_mmm$log_sales), lag=40,
-                                main = "Lagged correlations between past spend and current sales (All-time)",
-                                xlim = c(-40,-1))
-
-lagged_corr_alltime_11_16 <- ccf(ts(data_mmm$log_total_spend), ts(data_mmm$log_sales), lag=16,
-                                 main = "Lagged correlations between past spend and current sales (All-time)",
-                                 xlim = c(-16,-11))
 
 ### some plotting
 # spend and sales associations
@@ -288,8 +272,8 @@ daily_spend_over_time <- ggplot(data_mmm, aes(x=date, y=c(log_facebook_newsfeed_
                                                           log_youtube_performance_spend,
                                                           log_newspaper_spend,
                                                           log_tv_spend))) + 
-  geom_point()+
-  geom_smooth() +
+  #geom_point()+
+  #geom_smooth() +
   #geom_text(x = 7.8, y = 9.5, label = lm_eqn(df), parse = TRUE) +
   xlab("Date") +
   ylab("Ad Spend") +
@@ -304,14 +288,34 @@ daily_spend_over_time <- ggplot(data_mmm, aes(x=date, y=log_facebook_newsfeed_sp
   labs(title = "Spend over time for key channels")
 
 ### play with some simple regression models
-lm1 <- train(log_sales ~ log_total_spend
+lm1 <- train(sales ~ total_spend
+             ,
+             data = data_mmm,
+             #trControl=cross_train,
+             method="lm")
+summary(lm1)
+
+lm2 <- train(sales ~ facebook_newsfeed_spend
+             + youtube_brand_spend
+             + search_spend
+             + youtube_performance_spend
+             + newspaper_spend
+             + tv_spend
+             ,
+             data = data_mmm,
+             #trControl=cross_train,
+             method="lm")
+summary(lm2)
+
+
+lm1_log <- train(log_sales ~ log_total_spend
                     ,
                     data = data_mmm,
                     #trControl=cross_train,
                     method="lm")
-summary(lm1)
+summary(lm1_log)
 
-lm2 <- train(log_sales ~ log_facebook_newsfeed_spend
+lm2_log <- train(log_sales ~ log_facebook_newsfeed_spend
              + log_youtube_brand_spend
              + log_search_spend
              + log_youtube_performance_spend
@@ -321,4 +325,42 @@ lm2 <- train(log_sales ~ log_facebook_newsfeed_spend
              data = data_mmm,
              #trControl=cross_train,
              method="lm")
-summary(lm2)
+summary(lm2_log)
+
+
+lm1_log_2022 <- train(log_sales ~ log_total_spend
+                 ,
+                 data = filter(data_mmm,data_mmm$year==2022),
+                 #trControl=cross_train,
+                 method="lm")
+summary(lm1_log_2022)
+
+lm2_log_2022 <- train(log_sales ~ log_facebook_newsfeed_spend
+                 + log_youtube_brand_spend
+                 + log_search_spend
+                 + log_youtube_performance_spend
+                 + log_newspaper_spend
+                 + log_tv_spend
+                 ,
+                 data = filter(data_mmm,data_mmm$year==2022),
+                 #trControl=cross_train,
+                 method="lm")
+summary(lm2_log_2022)
+
+### look at lagged spend-sales correlations
+lagged_corr_alltime_1_40 <- ccf(spend_ts <- ts(data_mmm$total_spend), sales_ts <- ts(data_mmm$sales), lag=40,
+                                main = "Lagged correlations between past spend and current sales (All-time)",
+                                xlim = c(-40,-1))
+
+lagged_corr_alltime_11_16 <- ccf(spend_ts <- ts(data_mmm$total_spend), sales_ts <- ts(data_mmm$sales), lag=16,
+                                 main = "Lagged correlations between past spend and current sales (All-time)",
+                                 xlim = c(-16,-11))
+
+log_lagged_corr_alltime_1_40 <- ccf(ts(data_mmm$log_total_spend), ts(data_mmm$log_sales), lag=40,
+                                    main = "Lagged correlations between past spend and current sales (All-time)",
+                                    xlim = c(-40,-1))
+
+lagged_corr_alltime_11_16 <- ccf(ts(data_mmm$log_total_spend), ts(data_mmm$log_sales), lag=16,
+                                 main = "Lagged correlations between past spend and current sales (All-time)",
+                                 xlim = c(-16,-11))
+
