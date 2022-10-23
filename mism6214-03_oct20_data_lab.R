@@ -16,30 +16,33 @@ setwd("/Users/j.runge/Downloads")
 
 ##### Experimentation #####
 ### read in data
-data <- read_dta("android_xsection_treated_cleaned.dta")
+#data <- read_dta("android_xsection_treated_cleaned.dta")
+data <- read.csv("android_xsection_treated_cleaned.csv", header = TRUE)
 
 ### store data as csv
-write.csv(data, file="android_xsection_treated_cleaned.csv")
+#write.csv(data, file="android_xsection_treated_cleaned.csv")
 
 ### some data formatting
 data$treatment <- as.factor(data$treatment)
-data$treatment <- relevel(data$treatment, ref='no_promo')
-
+data$treatment <- relevel(data$treatment, ref='after0days')
 
 ### simple plot of key outcomes by treatment
 by_treatment <- data %>%
-  dplyr::group_by(treatment) %>%
-  dplyr::summarize(conversion = mean(conversion),
-                   conversion_se = sd(data$conversion)/sqrt(length(data$conversion)),
-                   purchases = mean(purchases),
-                   purchases_se = sd(data$purchases)/sqrt(length(data$purchases)),
-                   revenue = mean(revenue),
-                   revenue_se = sd(data$revenue)/sqrt(length(data$revenue)),
-                   sessions = mean(sessions),
-                   sessions_se = sd(data$sessions)/sqrt(length(data$sessions))
+  group_by(treatment) %>%
+  summarise(n = n(),
+            # the bug was here: the calculated variable needs to be named differently from 
+            # the main variable in the dataframe; i now added "_mean" behind the calculated vars
+            conversion_mean = mean(conversion),
+            conversion_se = sd(conversion)/sqrt(length(conversion)),
+            purchases_mean = mean(purchases),
+            purchases_se = sd(purchases)/sqrt(length(purchases)),
+            revenue_mean = mean(revenue),
+            revenue_se = sd(revenue)/sqrt(length(revenue)),
+            sessions_mean = mean(sessions),
+            sessions_se = sd(sessions)/sqrt(length(sessions))
   )
 
-btm <- melt(by_treatment[,c('treatment','conversion','purchases','revenue','sessions')],id.vars = 1)
+btm <- melt(by_treatment[,c('treatment','conversion_mean','purchases_mean','revenue_mean','sessions_mean')],id.vars = 1)
 btm$variable <- substr(btm$variable,1,7)
 
 btm_se <- melt(by_treatment[,c('treatment','conversion_se','purchases_se','revenue_se','sessions_se')],id.vars = 1)
@@ -143,5 +146,3 @@ rev_teh_ram <- train(revenue ~ treatment * device_ram
                      data = data,
                      method="lm")
 summary(rev_teh_ram)
-
-
